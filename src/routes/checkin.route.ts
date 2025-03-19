@@ -7,14 +7,11 @@ import {
 } from "../controllers/checkin.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
-const router = Router();
+const checkinRouter = Router();
 
-router.post("/checkin", authMiddleware, answerCheckin);
+checkinRouter.post("/", authMiddleware, answerCheckin);
+checkinRouter.post("/", authMiddleware, getCheckin);
+checkinRouter.post("/last7", authMiddleware, getLast7Checkin);
+checkinRouter.get("/today", authMiddleware, filledCheckinToday);
 
-router.post("/checkin", authMiddleware, getCheckin);
-
-router.post("/checkin/last7", authMiddleware, getLast7Checkin);
-
-router.get("/checkin/today", authMiddleware, filledCheckinToday);
-
-export default router;
+export default checkinRouter;

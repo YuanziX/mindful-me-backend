@@ -19,6 +19,6 @@ export const authMiddleware = (
     return;
   }
 
-  req.user = decoded;
+  req.body.user = decoded;
   next();
 };

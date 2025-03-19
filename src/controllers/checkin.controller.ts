@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { checkinSchema, getCheckinSchema } from "../zod/checkin.zod";
 import prisma from "../utils/prisma.utils";
+import model from "../utils/gemini.util";
 
 export async function answerCheckin(req: Request, res: Response) {
   try {
@@ -10,7 +11,7 @@ export async function answerCheckin(req: Request, res: Response) {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.user } });
+    const user = await prisma.user.findUnique({ where: { id: req.body.user } });
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
@@ -29,9 +30,18 @@ export async function answerCheckin(req: Request, res: Response) {
       },
     });
 
-    res
-      .status(200)
-      .json({ success: false, message: "Check-in answered successfully" });
+    const affirmationMessage = await model.generateContent(
+      `reply to this check-in ${checkin}`
+    );
+
+    const affirmation = await prisma.affirmation.create({
+      data: {
+        checkInId: checkin.id,
+        message: affirmationMessage.response.text(),
+      },
+    });
+
+    res.status(200).json({ success: false, message: affirmation });
     return;
   } catch (error) {
     console.error("Error answering check-in:", error);
@@ -54,7 +64,7 @@ export async function getCheckin(req: Request, res: Response) {
     const { date } = parsedQuery.data;
     const parsedDate = new Date(date);
 
-    const user = await prisma.user.findUnique({ where: { id: req.user } });
+    const user = await prisma.user.findUnique({ where: { id: req.body.user } });
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
@@ -84,7 +94,7 @@ export async function getCheckin(req: Request, res: Response) {
 
 export async function getLast7Checkin(req: Request, res: Response) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user } });
+    const user = await prisma.user.findUnique({ where: { id: req.body.user } });
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
@@ -109,7 +119,7 @@ export async function getLast7Checkin(req: Request, res: Response) {
 
 export async function filledCheckinToday(req: Request, res: Response) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user } });
+    const user = await prisma.user.findUnique({ where: { id: req.body.user } });
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
